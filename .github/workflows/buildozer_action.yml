@@ -140,3 +140,76 @@ jobs:
             bin/*.apk
             bin/*.aab
           retention-days: 3
+          Description:
+In github actions, we install python, then use pipenv to install dependencies. The steps are as follows:
+
+`jobs:
+test:
+name: Run Tests
+runs-on: ubuntu-latest
+
+steps:
+
+- name: Check out repository code
+  uses: actions/checkout@v4
+
+- name: Setup Python
+  uses: actions/setup-python@v5
+  with:
+    python-version: "3.11.11"
+
+- name: Install pipenv
+  run: |
+    python -m pip install --upgrade pipenv wheel
+
+
+- uses: actions/cache@v4
+  id: pipenv-cache
+  with:
+    path: ~/.local/share/virtualenvs
+    key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-pipenv-
+
+- name: Install dependencies
+  if: steps.cache-pipenv.outputs.cache-hit != 'true'
+  run: |
+    pipenv install --deploy --dev
+    pipenv install -e .
+`
+
+After upgrading the patch version from 3.11.10 to 3.11.11 we get the following error on the Install dependencies step:
+
+Run pipenv install --deploy --dev Installing dependencies from Pipfile.lock (a990db)... Traceback (most recent call last): File "/opt/hostedtoolcache/Python/3.11.11/x64/bin/pipenv", line 8, in <module> sys.exit(cli()) ^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/core.py", line 1157, in __call__ return self.main(*args, **kwargs) ^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/cli/options.py", line 52, in main return super().main(*args, **kwargs, windows_expand_args=False) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/core.py", line 1078, in main rv = self.invoke(ctx) ^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/core.py", line 1688, in invoke return _process_result(sub_ctx.command.invoke(sub_ctx)) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/core.py", line [14](https://github.com/argoXai/echion/actions/runs/12298597226/job/34370725919#step:6:15)34, in invoke return ctx.invoke(self.callback, **ctx.params) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/core.py", line 783, in invoke return __callback(*args, **kwargs) ^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/decorators.py", line 92, in new_func return ctx.invoke(f, obj, *args, **kwargs) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/vendor/click/core.py", line 783, in invoke return __callback(*args, **kwargs) ^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/cli/command.py", line 207, in install do_install( File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/routines/install.py", line 341, in do_install raise e File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/routines/install.py", line 327, in do_install do_install_dependencies( File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/routines/install.py", line 530, in do_install_dependencies batch_install( File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/routines/install.py", line 595, in batch_install deps_to_install = [ ^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/routines/install.py", line 598, in <listcomp> if not project.environment.is_satisfied(dep) ^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/project.py", line 508, in environment self._environment = self.get_environment(allow_global=allow_global) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/project.py", line 494, in get_environment environment = Environment( ^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/environment.py", line 81, in __init__ self._base_paths = self.get_paths() ^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/environment.py", line 342, in get_paths c = subprocess_run(command) ^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pipenv/utils/processes.py", line 72, in subprocess_run return subprocess.run( ^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/subprocess.py", line 548, in run with Popen(*popenargs, **kwargs) as process: ^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/subprocess.py", line 1026, in __init__ self._execute_child(args, executable, preexec_fn, close_fds, File "/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/subprocess.py", line [19](https://github.com/argoXai/echion/actions/runs/12298597226/job/34370725919#step:6:20)55, in _execute_child raise child_exception_type(errno_num, err_msg, err_filename) FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/.local/share/virtualenvs/echion-h5L6Iya-/bin/python' Error: Process completed with exit code 1.
+
+Action version:
+Specify the action version
+
+Platform:
+Current runner version: '2.321.0'
+Operating System
+Ubuntu
+22.04.5
+LTS
+Runner Image
+Image: ubuntu-22.04
+Version: 20241201.1.0
+Included Software: https://github.com/actions/runner-images/blob/ubuntu22/20241201.1/images/ubuntu/Ubuntu2204-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu22%2F20241201.1
+Runner Image Provisioner
+2.0.385.1
+
+Runner type:
+
+Hosted
+Tools version:
+Python 3.10.10 -> 3.10.11
+
+Repro steps:
+Create a repo with a Pipfile.lock file at root, and a github actions file with the steps above, and push to run github actions on Python 3.10.11 .
+
+Expected behavior:
+Python deps install correctly
+
+Actual behavior:
+We get the error above
